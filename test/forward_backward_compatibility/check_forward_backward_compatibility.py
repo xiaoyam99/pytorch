@@ -120,6 +120,10 @@ ALLOW_LIST = [
     ("aten::nanmean.out", datetime.date(2022, 8, 30)),
     ("aten::nansum", datetime.date(2022, 8, 30)),
     ("aten::nansum.out", datetime.date(2022, 8, 30)),
+    ("aten::amax", datetime.date(2022, 9, 15)),
+    ("aten::amax.out", datetime.date(2022, 9, 15)),
+    ("aten::amin", datetime.date(2022, 9, 15)),
+    ("aten::amin.out", datetime.date(2022, 9, 15)),
     # TODO: FIXME: prims shouldn't be checked
     ("prims::.*", datetime.date(9999, 1, 1)),
 ]
