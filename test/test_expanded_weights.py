@@ -178,9 +178,6 @@ class TestExpandedWeightFunctional(TestCase):
             if op.name == "nn.functional.embedding":  # embedding flips its argument order for autograd tests
                 sample_input = SampleInput(sample_input.args[0], args=(sample_input.input,), kwargs=sample_input.kwargs)
 
-            def reduction(x):
-                return x.sum()
-
             self._compare_ew_and_for_loop_per_sample_grads(op, sample_input, torch.sum)
 
     @ops(filter(lambda op: op.supports_expanded_weight, op_db), dtypes=OpDTypes.supported, allowed_dtypes=(torch.double,))
@@ -628,8 +625,7 @@ def supported_inputs(op, sample_inputs, supported_inputs=True):
             is_supported_input = input.input.shape != normalized_shape  # would cause inter-batch operations
         elif op.name in convolutions:
             # currently can't deal with padding computation on Python level
-            is_supported_input = 'padding' not in input.kwargs or not isinstance(input.kwargs['padding'], str)
-            is_supported_input = is_supported_input and input.input.dim() == batched_input_size[op.name]
+            is_supported_input = input.input.dim() == batched_input_size[op.name]
         elif op.name == "nn.functional.embedding":
             idx = input.args[0]
             is_supported_input = len(idx.shape) > 1  # there's no batch size
