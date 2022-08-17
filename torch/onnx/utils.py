@@ -470,7 +470,6 @@ def export(
             * ``True``: export all ``nn.Module`` forward calls as local function nodes.
             * Set of type of nn.Module: export ``nn.Module`` forward calls as local function nodes,
               only if the type of the ``nn.Module`` is found in the set.
-
     Raises:
       CheckerError: If the ONNX checker detects an invalid ONNX graph. Will still export the
         model to the file ``f`` even if this is raised.
