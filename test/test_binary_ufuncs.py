@@ -3791,6 +3791,7 @@ class TestBinaryUfuncs(TestCase):
             test_x((2, 3), 1, [1.0, 2.0], device)
             test_x((2, 3), 1, [1.0, 2.0, 3.0, 4.0], device)
 
+    @skipIfTorchDynamo("https://github.com/pytorch/torchdynamo/issues/847")
     @skipIf(not TEST_SCIPY, "Scipy required for the test.")
     def test_cumulative_trapezoid(self, device):
 
