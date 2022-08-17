@@ -26,6 +26,7 @@ from torch.testing._internal.common_utils import (
     numpy_to_torch_dtype_dict,
     TEST_SCIPY,
     set_default_dtype,
+    skipIfTorchDynamo,
 )
 from torch.testing._internal.common_device_type import (
     expectedFailureMeta,
