@@ -206,7 +206,9 @@ void ReplaceBlockOutputWithOptional(
   Node* opt_node = ONNXOptionalNode(opt_type, block->owningGraph());
   opt_node->insertBefore(block->return_node());
   Value* block_output = block->outputs().at(i);
-  block_output->replaceAllUsesWith(opt_node->output());
+  // replace only the last node as Optional Node only affects
+  // the node right before output
+  block_output->replaceLastUseWith(opt_node->output());
   if (!block_output->type()->cast<NoneType>()) {
     opt_node->addInput(block_output);
     opt_node->copyMetadata(block_output->node());
@@ -265,7 +267,12 @@ void FixupONNXLoopBlockOutputs(Node* n) {
   for (Block* block : n->blocks()) {
     // output 0 is continue_condition, never None.
     for (const auto i : c10::irange(1, block->outputs().size())) {
-      if (block->outputs().at(i)->type()->cast<NoneType>()) {
+      // Two conditions that we need to replace block output with optional
+      // 1. output is NoneType
+      // 2. input is optional but output type is not
+      if ((block->outputs().at(i)->type()->cast<NoneType>()) ||
+          (block->inputs().at(i + 1)->type()->cast<OptionalType>() &&
+           !block->outputs().at(i)->type()->cast<OptionalType>())) {
         ReplaceBlockOutputWithOptional(
             // Output 0 is continue_condition.
             // Inputs (0, 1) are (loop_counter, cond). So input i + 1
