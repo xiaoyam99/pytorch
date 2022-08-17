@@ -1716,6 +1716,7 @@ aliasing_failures = (
 )
 
 fake_striding_skips = (
+    "diag_embed",
     "fft.fft2",
     "fft.fft",
     "fft.fftn",
