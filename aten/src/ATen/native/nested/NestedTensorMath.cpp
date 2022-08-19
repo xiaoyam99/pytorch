@@ -6,6 +6,7 @@
 #include <ATen/WrapDimUtils.h>
 #include <ATen/core/op_registration/op_registration.h>
 #include <ATen/native/layer_norm.h>
+#include <ATen/native/TensorShape.h>
 #include <ATen/NestedTensorImpl.h>
 #include <c10/core/DispatchKey.h>
 #include <ATen/native/nested/NestedTensorMath.h>
@@ -1178,6 +1179,53 @@ Tensor _reshape_nested(const Tensor& self, IntArrayRef proposed_shape) {
   NestedTensor_reshape_copy(output,
       buffer, sizes, strides, offsets);
   return output;
+}
+
+Tensor slice_nested(
+    const Tensor& self,
+    int64_t dim,
+    c10::optional<int64_t> start,
+    c10::optional<int64_t> end,
+    int64_t step) {
+  int64_t ndim = self.dim();
+  if (ndim == 0) {
+    TORCH_CHECK_INDEX(false, "slice() cannot be applied to a 0-dim tensor.");
+  }
+  dim = maybe_wrap_dim(dim, ndim);
+  TORCH_CHECK(dim > 0, "Nested tensor dimension 0 cannot be sliced");
+
+  // will error if the dimension is jagged
+  auto dim_size = self.size(dim);
+
+  TORCH_CHECK(step > 0, "slice step must be positive");
+
+  auto* nt_impl = get_nested_tensor_impl(self);
+  const int64_t ntensors = nt_impl->size(0);
+  TORCH_CHECK(ntensors > 0, "Empty nested tensor cannot be sliced");
+
+  const auto& sizes = nt_impl->get_nested_size_tensor();
+  const auto& strides = nt_impl->get_nested_stride_tensor();
+  const std::vector<int64_t>& offsets = nt_impl->get_offsets();
+
+  auto new_sizes = sizes.clone();
+  auto new_strides = strides.clone();
+  auto new_offsets = std::vector<int64_t>(offsets);
+
+  // account for the implicit batch dim
+  --dim;
+  int64_t start_val, end_val;
+  std::tie(start_val, end_val) = get_slice_range(start, end, dim_size);
+  auto len = end_val - start_val;
+  for (int64_t i = 0; i < ntensors; i++) {
+    int64_t *size_ptr = new_sizes[i].data_ptr<int64_t>();
+    int64_t *stride_ptr = new_strides[i].data_ptr<int64_t>();
+
+    new_offsets[i] = offsets[i] + start_val * stride_ptr[dim];
+    size_ptr[dim] = (len + step - 1) / step; // round-up
+    stride_ptr[dim] *= step;
+  }
+
+  return create_nested_view_tensor(self, new_sizes, new_strides, std::vector<int64_t>(new_offsets));
 }
 
 } // namespace native
