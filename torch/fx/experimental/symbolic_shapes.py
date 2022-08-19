@@ -18,6 +18,15 @@ __all__ = [
 
 SYM_FUNCTION_MODE = None
 
+math_lib = torch.library.Library("math", "DEF")
+
+math_lib.define("mul(int a, int b) -> int")
+math_lib.define("eq(int a, int b) -> bool")
+
+math_lib.impl("mul", lambda a, b: a * b, "Undefined")
+math_lib.impl("eq", lambda a, b: a == b, "Undefined")
+
+
 # We don't bother with the metaclass as all of the dispatching logic happens
 # entirely from Python
 #
@@ -124,7 +133,7 @@ class PySymInt(object):
         return PySymInt(sympy.Integer(num), self.shape_env, constant=num)
 
     def __str__(self):
-        return f"PySymInt({self.expr})"
+        return f"{self.expr}"
 
     # Today we error on calling int on a symbolic shape, as this is a very accessible footgun.
     # In the future we'll probably need some explicit way of allowing this
